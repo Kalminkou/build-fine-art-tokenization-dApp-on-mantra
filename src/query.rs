@@ -1,7 +1,9 @@
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use cosmwasm_std::{to_json_binary, Addr, Binary, BlockInfo, Deps, Env, Order, StdError, StdResult};
+use cosmwasm_std::{
+    to_json_binary, Addr, Binary, BlockInfo, Deps, Env, Order, StdError, StdResult,
+};
 
 use cw721::{
     AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, ContractInfoResponse, CustomMsg,
@@ -11,7 +13,7 @@ use cw721::{
 use cw_storage_plus::Bound;
 use cw_utils::maybe_addr;
 
-use crate::msg::{MinterResponse, QueryMsg, NftDetailsResponse};
+use crate::msg::{MinterResponse, NftDetailsResponse, QueryMsg};
 use crate::state::{Approval, Cw721Contract, TokenInfo};
 
 const DEFAULT_LIMIT: u32 = 10;
@@ -23,17 +25,20 @@ where
     C: CustomMsg,
 {
     fn contract_info(&self, deps: Deps) -> StdResult<ContractInfoResponse> {
-        // TODO: Load contract info from storage and return it
+        self.contract_info.load(deps.storage)
     }
 
     fn num_tokens(&self, deps: Deps) -> StdResult<NumTokensResponse> {
-        // TODO: Get the token count from storage
-        // TODO: Return the count wrapped in a NumTokensResponse
+        let count = self.token_count(deps.storage)?;
+        Ok(NumTokensResponse { count })
     }
 
     fn nft_info(&self, deps: Deps, token_id: String) -> StdResult<NftInfoResponse<T>> {
-        // TODO: Load the token info from storage
-        // TODO: Return the token URI and extension data in an NftInfoResponse
+        let info = self.tokens.load(deps.storage, &token_id)?;
+        Ok(NftInfoResponse {
+            token_uri: info.token_uri,
+            extension: info.extension,
+        })
     }
 
     fn owner_of(
@@ -212,25 +217,46 @@ where
     }
 
     pub fn nft_details(&self, deps: Deps) -> StdResult<NftDetailsResponse> {
-        // TODO: Load mint price, max mints, and token URI from storage
-        // TODO: Return these details in an NftDetailsResponse
+        let mint_price = self.mint_price.load(deps.storage)?;
+        let max_mints = self.max_mints.load(deps.storage)?;
+        let token_uri = self.token_uri.load(deps.storage)?;
+
+        Ok(NftDetailsResponse {
+            token_uri,
+            mint_price,
+            max_mints,
+        })
     }
 
     pub fn query(&self, deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         match msg {
-            QueryMsg::Minter {} => to_json_binary(&self.minter(deps)?),
+            // QueryMsg::Minter {} => to_json_binary(&self.minter(deps)?),
             QueryMsg::ContractInfo {} => to_json_binary(&self.contract_info(deps)?),
             QueryMsg::NftInfo { token_id } => to_json_binary(&self.nft_info(deps, token_id)?),
 
             // TODO: Add cases for different query types
-            // Hint: Think about the four queries we mentioned
+            QueryMsg::AllNftInfo {
+                token_id,
+                include_expired,
+            } => to_json_binary(&self.all_nft_info(
+                deps,
+                env,
+                token_id,
+                include_expired.unwrap_or(false),
+            )?),
+            QueryMsg::NumTokens {} => to_json_binary(&self.num_tokens(deps)?),
+            QueryMsg::NftDetails {} => to_json_binary(&self.nft_details(deps)?),
 
+            // Hint: Think about the four queries we mentioned
             QueryMsg::OwnerOf {
                 token_id,
                 include_expired,
-            } => {
-                to_json_binary(&self.owner_of(deps, env, token_id, include_expired.unwrap_or(false))?)
-            }
+            } => to_json_binary(&self.owner_of(
+                deps,
+                env,
+                token_id,
+                include_expired.unwrap_or(false),
+            )?),
             QueryMsg::AllOperators {
                 owner,
                 include_expired,
@@ -266,9 +292,12 @@ where
             QueryMsg::Approvals {
                 token_id,
                 include_expired,
-            } => {
-                to_json_binary(&self.approvals(deps, env, token_id, include_expired.unwrap_or(false))?)
-            }
+            } => to_json_binary(&self.approvals(
+                deps,
+                env,
+                token_id,
+                include_expired.unwrap_or(false),
+            )?),
         }
     }
 }

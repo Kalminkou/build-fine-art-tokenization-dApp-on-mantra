@@ -1,8 +1,8 @@
+use cosmwasm_std::Binary;
+use cosmwasm_std::Coin;
+use cw721::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use cosmwasm_std::Coin;
-use cosmwasm_std::Binary;
-use cw721::Expiration;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -10,14 +10,18 @@ pub struct InstantiateMsg {
     pub symbol: String,
     pub minter: String,
 
-    // add code as instructed in the lesson
-
+    pub max_mints: u64,
+    pub mint_price: Coin,
+    pub token_uri: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg<T> {
-    TransferNft { recipient: String, token_id: String },
+    TransferNft {
+        recipient: String,
+        token_id: String,
+    },
     SendNft {
         contract: String,
         token_id: String,
@@ -28,18 +32,33 @@ pub enum ExecuteMsg<T> {
         token_id: String,
         expires: Option<Expiration>,
     },
-    Revoke { spender: String, token_id: String },
+    Revoke {
+        spender: String,
+        token_id: String,
+    },
     ApproveAll {
         operator: String,
         expires: Option<Expiration>,
     },
-    RevokeAll { operator: String },
-    Burn{ token_id: String},
-
-    // add code as instructed in the lesson
+    RevokeAll {
+        operator: String,
+    },
+    Burn {
+        token_id: String,
+    },
+    Mint(MintMsg<T>),
+    SetMintConfig {
+        price: Coin,
+        max_mints: u64,
+    },
+    ToggleMinting {},
 }
 
-// add code as instructed in the lesson
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MintMsg<T> {
+    pub owner: String,
+    pub extension: T,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -85,13 +104,25 @@ pub enum QueryMsg {
         start_after: Option<String>,
         limit: Option<u32>,
     },
-    
+
     AllTokens {
         start_after: Option<String>,
         limit: Option<u32>,
     },
-
+    NftDetails {},
     // add code as instructed in the lesson
 }
 
-// add code as instructed in the lesson
+// Add this new struct
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct NftDetailsResponse {
+    pub token_uri: Option<String>,
+    pub mint_price: Coin,
+    pub max_mints: u64,
+}
+
+// Add this new struct
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct MinterResponse {
+    pub minter: String,
+}
