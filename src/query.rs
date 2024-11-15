@@ -1,7 +1,9 @@
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use cosmwasm_std::{to_json_binary, Addr, Binary, BlockInfo, Deps, Env, Order, StdError, StdResult};
+use cosmwasm_std::{
+    to_json_binary, Addr, Binary, BlockInfo, Deps, Env, Order, StdError, StdResult,
+};
 
 use cw721::{
     AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, ContractInfoResponse, CustomMsg,
@@ -11,7 +13,7 @@ use cw721::{
 use cw_storage_plus::Bound;
 use cw_utils::maybe_addr;
 
-use crate::msg::{MinterResponse, QueryMsg, NftDetailsResponse};
+use crate::msg::{MinterResponse, NftDetailsResponse, QueryMsg};
 use crate::state::{Approval, Cw721Contract, TokenInfo};
 
 const DEFAULT_LIMIT: u32 = 10;
@@ -218,19 +220,20 @@ where
 
     pub fn query(&self, deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         match msg {
-            QueryMsg::Minter {} => to_json_binary(&self.minter(deps)?),
             QueryMsg::ContractInfo {} => to_json_binary(&self.contract_info(deps)?),
             QueryMsg::NftInfo { token_id } => to_json_binary(&self.nft_info(deps, token_id)?),
 
             // TODO: Add cases for different query types
             // Hint: Think about the four queries we mentioned
-
             QueryMsg::OwnerOf {
                 token_id,
                 include_expired,
-            } => {
-                to_json_binary(&self.owner_of(deps, env, token_id, include_expired.unwrap_or(false))?)
-            }
+            } => to_json_binary(&self.owner_of(
+                deps,
+                env,
+                token_id,
+                include_expired.unwrap_or(false),
+            )?),
             QueryMsg::AllOperators {
                 owner,
                 include_expired,
@@ -266,9 +269,12 @@ where
             QueryMsg::Approvals {
                 token_id,
                 include_expired,
-            } => {
-                to_json_binary(&self.approvals(deps, env, token_id, include_expired.unwrap_or(false))?)
-            }
+            } => to_json_binary(&self.approvals(
+                deps,
+                env,
+                token_id,
+                include_expired.unwrap_or(false),
+            )?),
         }
     }
 }
