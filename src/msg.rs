@@ -110,10 +110,8 @@ pub enum QueryMsg {
         limit: Option<u32>,
     },
     NftDetails {},
-    // add code as instructed in the lesson
 }
 
-// Add this new struct
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct NftDetailsResponse {
     pub token_uri: Option<String>,
@@ -121,7 +119,6 @@ pub struct NftDetailsResponse {
     pub max_mints: u64,
 }
 
-// Add this new struct
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct MinterResponse {
     pub minter: String,

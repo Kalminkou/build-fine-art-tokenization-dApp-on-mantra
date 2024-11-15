@@ -1,5 +1,7 @@
 use crate::{ExecuteMsg, QueryMsg};
-use cosmwasm_std::{to_json_binary, Addr, CosmosMsg, QuerierWrapper, StdResult, WasmMsg, WasmQuery};
+use cosmwasm_std::{
+    to_json_binary, Addr, CosmosMsg, QuerierWrapper, StdResult, WasmMsg, WasmQuery,
+};
 use cw721::{
     AllNftInfoResponse, Approval, ApprovalResponse, ApprovalsResponse, ContractInfoResponse,
     NftInfoResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse, TokensResponse,
@@ -38,8 +40,6 @@ impl Cw721Contract {
         .into();
         querier.query(&query)
     }
-
-    /*** queries ***/
 
     pub fn owner_of<T: Into<String>>(
         &self,
@@ -108,13 +108,11 @@ impl Cw721Contract {
         Ok(res.count)
     }
 
-    /// With metadata extension
     pub fn contract_info(&self, querier: &QuerierWrapper) -> StdResult<ContractInfoResponse> {
         let req = QueryMsg::ContractInfo {};
         self.query(querier, req)
     }
 
-    /// With metadata extension
     pub fn nft_info<T: Into<String>, U: DeserializeOwned>(
         &self,
         querier: &QuerierWrapper,
@@ -126,7 +124,6 @@ impl Cw721Contract {
         self.query(querier, req)
     }
 
-    /// With metadata extension
     pub fn all_nft_info<T: Into<String>, U: DeserializeOwned>(
         &self,
         querier: &QuerierWrapper,
@@ -140,7 +137,6 @@ impl Cw721Contract {
         self.query(querier, req)
     }
 
-    /// With enumerable extension
     pub fn tokens<T: Into<String>>(
         &self,
         querier: &QuerierWrapper,
@@ -156,7 +152,6 @@ impl Cw721Contract {
         self.query(querier, req)
     }
 
-    /// With enumerable extension
     pub fn all_tokens(
         &self,
         querier: &QuerierWrapper,
@@ -167,12 +162,10 @@ impl Cw721Contract {
         self.query(querier, req)
     }
 
-    /// returns true if the contract supports the metadata extension
     pub fn has_metadata(&self, querier: &QuerierWrapper) -> bool {
         self.contract_info(querier).is_ok()
     }
 
-    /// returns true if the contract supports the enumerable extension
     pub fn has_enumerable(&self, querier: &QuerierWrapper) -> bool {
         self.tokens(querier, self.addr(), None, Some(1)).is_ok()
     }

@@ -49,7 +49,6 @@ where
         msg: ExecuteMsg<T>,
     ) -> Result<Response<C>, ContractError> {
         match msg {
-            // TODO: Add cases for different message types
             ExecuteMsg::Mint(msg) => self.mint(deps, env, info, msg),
             ExecuteMsg::SetMintConfig { price, max_mints } => {
                 self.set_mint_config(deps, info, price, max_mints)
@@ -93,29 +92,21 @@ where
         info: MessageInfo,
         msg: MintMsg<T>,
     ) -> Result<Response<C>, ContractError> {
-        // Check if minting is allowed
         let minting_allowed = self.minting_allowed.load(deps.storage)?;
         if !minting_allowed {
             return Err(ContractError::MintingDisabled {});
         }
-
-        // Check if there are mints left
         let token_count = self.token_count(deps.storage)?;
         let max_mints = self.max_mints.load(deps.storage)?;
         if token_count >= max_mints {
             return Err(ContractError::MaxMintsReached {});
         }
-
-        // Check payment
         let price = self.mint_price.load(deps.storage)?;
         if info.funds.len() != 1 || info.funds[0] != price {
             return Err(ContractError::IncorrectPayment {});
         }
 
-        // Retrieve the token_uri from storage
         let token_uri = self.token_uri.load(deps.storage)?;
-
-        // create the token
         let token = TokenInfo {
             owner: deps.api.addr_validate(&msg.owner)?,
             approvals: vec![],
@@ -136,8 +127,6 @@ where
             .add_attribute("token_id", token_count.to_string()))
     }
 
-    //Add set_mint_config and toggle_minting
-
     fn set_mint_config(
         &self,
         deps: DepsMut,
@@ -145,7 +134,6 @@ where
         price: Coin,
         max_mints: u64,
     ) -> Result<Response<C>, ContractError> {
-        // Only the minter (admin) can set the mint configuration
         let minter = self.minter.load(deps.storage)?;
         if info.sender != minter {
             return Err(ContractError::Unauthorized {});
@@ -213,7 +201,6 @@ where
         token_id: String,
         msg: Binary,
     ) -> Result<Response<C>, ContractError> {
-        // Transfer token
         self._transfer_nft(deps, &env, &info, &contract, &token_id)?;
 
         let send = Cw721ReceiveMsg {
@@ -221,8 +208,6 @@ where
             token_id: token_id.clone(),
             msg,
         };
-
-        // Send message
         Ok(Response::new()
             .add_message(send.into_cosmos_msg(contract.clone())?)
             .add_attribute("action", "send_nft")
@@ -274,13 +259,10 @@ where
         operator: String,
         expires: Option<Expiration>,
     ) -> Result<Response<C>, ContractError> {
-        // reject expired data as invalid
         let expires = expires.unwrap_or_default();
         if expires.is_expired(&env.block) {
             return Err(ContractError::Expired {});
         }
-
-        // set the operator for us
         let operator_addr = deps.api.addr_validate(&operator)?;
         self.operators
             .save(deps.storage, (&info.sender, &operator_addr), &expires)?;
@@ -328,7 +310,6 @@ where
     }
 }
 
-// helpers
 impl<'a, T, C> Cw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
@@ -343,9 +324,7 @@ where
         token_id: &str,
     ) -> Result<TokenInfo<T>, ContractError> {
         let mut token = self.tokens.load(deps.storage, token_id)?;
-        // ensure we have permissions
         self.check_can_send(deps.as_ref(), env, info, &token)?;
-        // set owner and remove existing approvals
         token.owner = deps.api.addr_validate(recipient)?;
         token.approvals = vec![];
         self.tokens.save(deps.storage, token_id, &token)?;
@@ -360,15 +339,12 @@ where
         info: &MessageInfo,
         spender: &str,
         token_id: &str,
-        // if add == false, remove. if add == true, remove then set with this expiration
         add: bool,
         expires: Option<Expiration>,
     ) -> Result<TokenInfo<T>, ContractError> {
         let mut token = self.tokens.load(deps.storage, token_id)?;
-        // ensure we have permissions
         self.check_can_approve(deps.as_ref(), env, info, &token)?;
 
-        // update the approval list (remove any for the same spender before adding)
         let spender_addr = deps.api.addr_validate(spender)?;
         token.approvals = token
             .approvals
@@ -376,9 +352,7 @@ where
             .filter(|apr| apr.spender != spender_addr)
             .collect();
 
-        // only difference between approve and revoke
         if add {
-            // reject expired data as invalid
             let expires = expires.unwrap_or_default();
             if expires.is_expired(&env.block) {
                 return Err(ContractError::Expired {});
@@ -395,7 +369,6 @@ where
         Ok(token)
     }
 
-    /// returns true iff the sender can execute approve or reject on the contract
     pub fn check_can_approve(
         &self,
         deps: Deps,
@@ -403,11 +376,9 @@ where
         info: &MessageInfo,
         token: &TokenInfo<T>,
     ) -> Result<(), ContractError> {
-        // owner can approve
         if token.owner == info.sender {
             return Ok(());
         }
-        // operator can approve
         let op = self
             .operators
             .may_load(deps.storage, (&token.owner, &info.sender))?;
@@ -423,7 +394,6 @@ where
         }
     }
 
-    /// returns true iff the sender can transfer ownership of the token
     pub fn check_can_send(
         &self,
         deps: Deps,
@@ -431,12 +401,10 @@ where
         info: &MessageInfo,
         token: &TokenInfo<T>,
     ) -> Result<(), ContractError> {
-        // owner can send
         if token.owner == info.sender {
             return Ok(());
         }
 
-        // any non-expired token approval can send
         if token
             .approvals
             .iter()
@@ -445,7 +413,6 @@ where
             return Ok(());
         }
 
-        // operator can send
         let op = self
             .operators
             .may_load(deps.storage, (&token.owner, &info.sender))?;

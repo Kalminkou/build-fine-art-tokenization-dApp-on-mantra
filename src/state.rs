@@ -19,7 +19,6 @@ where
     pub token_uri: Item<'a, Option<String>>,
     pub tokens: IndexedMap<'a, &'a str, TokenInfo<T>, TokenIndexes<'a, T>>,
     pub operators: Map<'a, (&'a Addr, &'a Addr), Expiration>,
-    // add code as instructed in the lesson
     pub(crate) _custom_response: PhantomData<C>,
     pub minting_allowed: Item<'a, bool>,
     pub max_mints: Item<'a, u64>,
@@ -46,7 +45,6 @@ impl Approval {
     }
 }
 
-// This is a signal, the implementations are in other files
 impl<T, C> Default for Cw721Contract<'static, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
@@ -72,8 +70,6 @@ where
         }
     }
 }
-
-// add code as instructed in the lesson
 
 impl<'a, T, C> Cw721Contract<'a, T, C>
 where

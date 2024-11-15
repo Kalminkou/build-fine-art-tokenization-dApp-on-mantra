@@ -230,11 +230,8 @@ where
 
     pub fn query(&self, deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         match msg {
-            // QueryMsg::Minter {} => to_json_binary(&self.minter(deps)?),
             QueryMsg::ContractInfo {} => to_json_binary(&self.contract_info(deps)?),
             QueryMsg::NftInfo { token_id } => to_json_binary(&self.nft_info(deps, token_id)?),
-
-            // TODO: Add cases for different query types
             QueryMsg::AllNftInfo {
                 token_id,
                 include_expired,
@@ -246,8 +243,6 @@ where
             )?),
             QueryMsg::NumTokens {} => to_json_binary(&self.num_tokens(deps)?),
             QueryMsg::NftDetails {} => to_json_binary(&self.nft_details(deps)?),
-
-            // Hint: Think about the four queries we mentioned
             QueryMsg::OwnerOf {
                 token_id,
                 include_expired,
