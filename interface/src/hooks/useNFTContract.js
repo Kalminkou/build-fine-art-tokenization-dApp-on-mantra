@@ -12,11 +12,14 @@ export function useNftContract() {
 
   const getSigningClient = useCallback(async () => {
     if (!window.keplr) throw new Error("Keplr not found");
-    await window.keplr.enable("mantra-hongbai-1");
-    const offlineSigner = window.keplr.getOfflineSigner("mantra-hongbai-1");
-    const gasPrice = GasPrice.fromString('0.025uaum');
-    return await SigningCosmWasmClient.connectWithSigner("https://rpc.hongbai.mantrachain.io", offlineSigner, { gasPrice });
-  }, []);
+    await window.keplr.enable("mantra-dukong-1");
+    const offlineSigner = window.keplr.getOfflineSigner("mantra-dukong-1");
+    const gasPrice = GasPrice.fromString('0.01uom');
+    return await SigningCosmWasmClient.connectWithSigner(
+    "https://rpc.dukong.mantrachain.io",  
+    offlineSigner,
+    { gasPrice }
+  ); }, []);
 
   const instantiateContract = useCallback(async (initMsg) => {
     if (!account) return;
